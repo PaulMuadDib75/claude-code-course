@@ -1,0 +1,14 @@
+Date: March 5th, 2026
+
+What I worked on:
+- Project 1A - Folder Organizer
+- Set up Git and connected to GitHub
+- Created CLAUDE.md
+
+What I learned:
+- Never run git init inside a folder that's already a Git repo
+- PowerShell uses Remove-Item instead of rmdir /q /s
+- Right-click to paste in PowerShell
+
+What confused me:
+- It was all strait forward until it came to using git but I'm sure I'll get the hang of it.
