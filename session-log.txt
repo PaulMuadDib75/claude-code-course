@@ -12,3 +12,17 @@ What I learned:
 
 What confused me:
 - It was all strait forward until it came to using git but I'm sure I'll get the hang of it.
+
+Date: March 7th, 2026
+
+What I worked on:
+- Project 1B - Your First Git Snapshot
+- Project 1C - Just Talk to Claude
+
+What I learned:
+- Learning how to use Git a bit more and getting more comfortable.
+- Learned how to edit the last commit tag.
+- Prompted Claude Code and impressed with how it descriped Python and how to use it.
+
+What confused me:
+- Getting the odd error messages with Git.  Still trying to decifer them.
