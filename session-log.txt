@@ -26,3 +26,15 @@ What I learned:
 
 What confused me:
 - Getting the odd error messages with Git.  Still trying to decifer them.
+
+Date: [March 8th, 2026]
+Phase: 2: 
+- Projects 2A, 2B, 2C - temperature converter, intro script, wire gauge lookup
+- Started on Sololearn's Introduction to Python and going to complete approximatly 30% before advancing to Phase 3
+
+What I learned: 
+- Variables, f-strings, dictionaries, dict.get(), input(), float(), debugging syntax errors
+
+What confused me: 
+- Phython concepts coming back but still need to work on it.
+- Still getting comfortable using PowerShell as I'm use to CMD.exe.  Same with Git
