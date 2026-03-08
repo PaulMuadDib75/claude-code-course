@@ -1,0 +1,122 @@
+Project 1C - Python Basics Q&A
+================================
+
+
+QUESTION 1: What is Python and why do most automation scripts use it?
+----------------------------------------------------------------------
+
+ANSWER:
+
+What is Python?
+
+Python is a programming language — a way of giving instructions to a computer in a format
+that's readable by humans.
+
+Think of it like this: if a computer is a piece of electrical equipment, Python is the
+"wiring diagram language" everyone agreed to use. Instead of cryptic symbols only experts
+understand, it reads almost like plain English.
+
+    # This is Python - notice how readable it is:
+    if voltage > 480:
+        print("Danger! Over voltage!")
+
+Compare that to older languages that look like:
+
+    if(v>480){printf("Danger! Over voltage!\n");}
+
+Same instruction, but Python is far easier to read and write.
+
+
+Why Do Automation Scripts Use Python?
+
+1. It's easy to learn
+   No need to understand deep computer science. You can write useful scripts within days,
+   not months.
+
+2. It comes with a massive toolbox
+   Python has thousands of pre-built "libraries" (like having a fully stocked tool bag
+   handed to you). Need to read Excel files? There's a library. Control a web browser?
+   Library. Talk to an API? Library.
+
+3. It's cross-platform
+   The same script runs on Windows, Mac, and Linux — like a connector that fits any
+   panel brand.
+
+4. It's the industry standard for automation
+   IT departments, manufacturers, data analysts — everyone uses it. So when you Google
+   a problem, someone has already solved it.
+
+5. It's free and open source
+   No license costs, ever.
+
+
+The Electrician Analogy:
+
+If C or C++ is like wiring from raw wire (total control, total complexity), Python is
+like using pre-made whips and connectors — you get to the finished result faster because
+someone already did the hard groundwork for you.
+
+For your level as a beginner, Python is absolutely the right choice for learning
+automation. It's the most beginner-friendly language that is also genuinely powerful
+and used professionally.
+
+
+==============================================================================
+
+
+QUESTION 2: Show me the simplest possible Python script and explain every line
+-------------------------------------------------------------------------------
+
+ANSWER:
+
+Here's the simplest useful Python script:
+
+    # This is a comment - Python ignores anything after the # symbol
+    # Comments are notes for humans, not instructions for the computer
+
+    # This line prints a message to the screen
+    print("Hello! My name is Python.")
+
+    # This creates a "variable" - a labeled box that stores a value
+    voltage = 480
+
+    # This prints the variable's value
+    print("The voltage is:", voltage)
+
+    # This does a calculation and stores the result
+    safe_voltage = voltage / 2
+
+    # This prints the result of the calculation
+    print("Half voltage would be:", safe_voltage)
+
+
+What Every Line Does:
+
+    # This is a comment   -> Comment    -> Ignored by Python. Notes for you.
+    print("Hello!")       -> Function   -> Displays text on screen
+    voltage = 480         -> Variable   -> Creates a labeled box called "voltage",
+                                          puts 480 in it
+    safe_voltage = v / 2  -> Math       -> Divides 480 by 2, stores result in new box
+
+
+The Electrician Analogy:
+
+- A variable is like a wire label. The label "voltage" doesn't carry current itself —
+  it just tells you what's in that wire (box).
+
+- A function like print() is like a test light — you hand it something and it shows
+  you the result.
+
+- A comment is like a note written on the panel door — doesn't affect anything
+  electrical, just helps the next guy understand what's going on.
+
+
+What You'd See When You Run It:
+
+    Hello! My name is Python.
+    The voltage is: 480
+    Half voltage would be: 240.0
+
+
+That's genuinely all Python is at its core — storing values in named boxes, doing
+things with them, and displaying results. Everything else builds on these three ideas.
