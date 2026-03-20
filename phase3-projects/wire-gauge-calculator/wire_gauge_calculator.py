@@ -7,7 +7,7 @@
 # GAUGE ORDER (smallest to largest)
 # Used to walk up from minimum until we find one that handles the load
 # ─────────────────────────────────────────────
-GAUGE_ORDER = ["14", "12", "10", "8", "6", "4", "3", "2", "1", "1/0", "2/0", "3/0", "4/0"]
+GAUGE_LIST = ["14", "12", "10", "8", "6", "4", "3", "2", "1", "1/0", "2/0", "3/0", "4/0"]
 
 # ─────────────────────────────────────────────
 # CEC TABLE 2 - COPPER AMPACITY at 75°C (in amps)
@@ -147,7 +147,7 @@ def find_minimum_gauge(amps, material):
         ampacity_table = ALUMINUM_AMPACITY
 
     # Walk gauges from smallest to largest
-    for gauge in GAUGE_ORDER:
+    for gauge in GAUGE_LIST:
         # Skip gauges not in the selected table (e.g. 14 AWG aluminum doesn't exist in CEC)
         if gauge not in ampacity_table:
             continue
