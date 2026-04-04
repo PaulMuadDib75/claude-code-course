@@ -146,7 +146,7 @@ def calculate_totals(materials, labour):
     - Grand total        = combined subtotal + overhead
     """
     # Add up all material line totals
-    materials_subtotal = sum(m["line_total"] for m in materials)
+    materials_subtotal = sum(m["line_total"] for m in materials[0:])
 
     # Labour subtotal came in from collect_labour()
     labour_subtotal = labour["labour_total"]
@@ -155,7 +155,7 @@ def calculate_totals(materials, labour):
     combined_subtotal = materials_subtotal + labour_subtotal
 
     # Overhead is 15% of the combined subtotal
-    overhead = combined_subtotal * OVERHEAD_RATE
+    overhead = (materials_subtotal + labour_subtotal) * OVERHEAD_RATE
 
     # Grand total is everything combined
     grand_total = combined_subtotal + overhead
