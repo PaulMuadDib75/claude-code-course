@@ -54,9 +54,12 @@ Date:
 Project 3B - Job Cost Estimator
 
 What I learned:
-
+-Prompted Claude Code with the pre defined prompt in the course outline to create a job cost estimator.
+-Claude pointed out that an int wouldn't work for certain items such as entering wire lengths.  I suggested changing it to a float and improved the code before finalizing it
+Had Cladue Code deliberately introduce breaks into the code and then had to find them.
 
 What confused me:
+-Still working out the nuances of using Git.  Had to merge as I didn't run a pull on the work computer before I started.
 
 Date:April 19th, 2026
 -Project 3C - Daily Inspection Checklist
