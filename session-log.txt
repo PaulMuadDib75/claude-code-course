@@ -38,3 +38,32 @@ What I learned:
 What confused me: 
 - Phython concepts coming back but still need to work on it.
 - Still getting comfortable using PowerShell as I'm use to CMD.exe.  Same with Git
+
+Date: March 19th, 2026
+-Project 3A - Wire Gauge Calculator
+
+What I learned:
+-How to give claude code a prompt in plan mode to create code for a specific function
+-Tested the code and then deliberatly broke it and then fixed it by interpreting the errors
+
+What confused me:
+-Had a problem loading claude code.  Discovered that node.js was no longer installed.  Was able to get claude code back up and running but strange how this keeps happening.
+-I was able to fix the breaks beacuse I knew where it was.  I should ask claude code to add deliberate errors in the code for me to find.
+
+Date:
+Project 3B - Job Cost Estimator
+
+What I learned:
+
+
+What confused me:
+
+Date:April 19th, 2026
+-Project 3C - Daily Inspection Checklist
+
+What I learned:
+-Again how to use Claude Code in plan mode to prompt a program concept and completing it to completion
+-Tested the code and then had Claude Code deliberatly break it for me to find the bugs.  This time around I had to compare the code side by side to find the bugs
+
+What confused me:
+-Finding the errors as the script didn't produce and error code when I ran it. The bugs were difficult to spot with my limited Python knowledge.  Claude reasurred me that a side by side comparisson check is a valid strategy for troubleshooting the code.
