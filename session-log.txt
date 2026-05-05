@@ -70,3 +70,29 @@ What I learned:
 
 What confused me:
 -Finding the errors as the script didn't produce and error code when I ran it. The bugs were difficult to spot with my limited Python knowledge.  Claude reasurred me that a side by side comparisson check is a valid strategy for troubleshooting the code.
+
+Date:May 05, 2026
+-Project 4A - Push to GitHub
+
+What I learned:
+-How to have Claude write me a professional readme file for the wire-gauge-calculator and push it to GitHub
+
+What confused me:
+-Pretty strait forward.  Still need to freshen up my git commands.
+
+-Project 4B - Client Quote Generator with PDF
+
+What I learned:
+-Same process as always.  Create a CLAUDE.md file, start CLAUDE in plan-mode, prompt what I want to build, review the plan, execute the plan.
+
+What confused me:
+-Ran into some trouble pushing to git as my token expired.  As for the project everything went well.
+
+-Project 4C - Live weather data from an API
+
+What I learned:
+Again same process.  Very cool how Claude builds as long as the prompts are good.
+
+What confused me:
+-Strait forward project.
+

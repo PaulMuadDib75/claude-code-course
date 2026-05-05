@@ -12,7 +12,19 @@ Introduces API calls — Python requesting data from the internet.
 
 \## Built so far
 
-\- Nothing yet
+\- quote\_generator.py — complete
+
+\- Generates PDF quotes with materials, labour, overhead, grand total
+
+\- PDF named quote\_\[clientname]\_\[date].pdf
+
+
+
+\- weather.py — complete
+
+\- Fetches live weather via Open-Meteo API (no key required)
+
+\- User enters city name, displays temp, wind speed, conditions
 
 
 
