@@ -12,7 +12,11 @@ Built for a Canadian industrial electrician.
 
 \## Built so far
 
-\- Nothing yet — starting fresh
+\- quote\_generator.py — complete
+
+\- Generates PDF quotes with materials, labour, overhead, grand total
+
+\- PDF named quote\_\[clientname]\_\[date].pdf
 
 
 
