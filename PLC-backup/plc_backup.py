@@ -50,11 +50,11 @@ import datetime     # For generating the timestamp used in folder names
 # =============================================================================
 
 # Where the PLC program files live right now
-SOURCE_DIR = r"C:\PLC\CURRENT_PLC_VERSION\2026"
+SOURCE_DIR = r"C:\PLC\CURRENT_PLC_VIRSION\2026"
 
 # NAS backup destination (mapped drive or UNC path)
 # TODO: FILL IN BEFORE USING — e.g. r"Z:\PLC_Backups" or r"\\servername\share\PLC_Backups"
-NAS_BACKUP = r"Z:\PLC_Backups"
+NAS_BACKUP = r"Z:\PLC_Programs"
 
 # Local backup destination (secondary copy on this machine or a local drive)
 # TODO: FILL IN BEFORE USING — e.g. r"D:\Backups\PLC"
@@ -63,7 +63,7 @@ LOCAL_BACKUP = r"C:\Backups\PLC"
 # Where the log file will be written (inside the local backup folder is a
 # good place so it's easy to find alongside the backups)
 # TODO: FILL IN BEFORE USING — update this to match LOCAL_BACKUP above
-LOG_FILE = r"C:\Backups\PLC\plc_backup_log.txt"
+LOG_FILE = r"Z:\PLC_Programs\plc_backup_log.txt"
 
 
 # =============================================================================
