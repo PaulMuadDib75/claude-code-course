@@ -3,17 +3,22 @@
 # =============================================================================
 #
 # WHAT THIS SCRIPT DOES:
-#   Copies all PLC program files from the source directory into a new
-#   timestamped folder on two destinations: a NAS (network drive) and a
-#   local backup folder. If the NAS is unreachable, it logs the error and
-#   continues — the local backup still runs. Every run is recorded in a
-#   plain-text log file.
+#   Copies PLC program files from the source directory into a new timestamped
+#   folder on two destinations: a NAS (network drive) and a local backup folder.
+#   For .ACD files, it uses incremental logic — only NEW or CHANGED files are
+#   copied. If any .ACD file has NOT been saved since the last backup, a popup
+#   warning is shown so the operator can save and re-run.
+#
+#   Non-ACD files (such as .BAK and recovery files) are always copied.
+#
+#   If the NAS is unreachable, it logs the error and continues — the local
+#   backup still runs. Every run is recorded in a plain-text log file.
 #
 # IMPORTANT NOTE ABOUT OPEN FILES:
 #   This script copies whatever is saved on disk. If RSLogix 5000 is open
 #   with unsaved changes, those changes will NOT be in the backup. Only the
-#   last Ctrl+S save is captured. See the companion reminder script
-#   (plc_backup_reminder.py) for a Saturday popup to prompt operators to save.
+#   last Ctrl+S save is captured. The popup warning (backup_popup.py) exists
+#   to alert the operator when a file has not been saved since the last backup.
 #
 # HOW TO RUN MANUALLY:
 #   Double-click this file in Windows Explorer, or right-click and choose
@@ -41,6 +46,7 @@
 # -----------------------------------------------------------------------------
 
 import os           # For working with file paths and directory listings
+import re           # For pattern matching when scanning backup folder names
 import shutil       # For copying files and folders
 import datetime     # For generating the timestamp used in folder names
 
@@ -90,13 +96,67 @@ def get_timestamp_folder_name():
 
 
 # =============================================================================
+# FUNCTION: find_latest_backup_folder
+# =============================================================================
+# Scans a backup destination to find the most recent backup folder.
+# Backup folders are named PLC_Backup_YYYY-MM-DD_HHMM — because the date
+# comes first and the format is consistent, alphabetical order equals
+# chronological order. So the last item in a sorted list is the most recent.
+#
+# Think of this like looking at a row of dated binders on a shelf and
+# picking the one with the highest date stamp.
+#
+# Parameters:
+#   dest_root — the root backup folder to scan (e.g. Z:\PLC_Programs)
+#
+# Returns:
+#   Full path to the most recent backup folder, or None if none found
+# =============================================================================
+
+def find_latest_backup_folder(dest_root):
+    # This regex pattern matches folder names in the exact format PLC_Backup_YYYY-MM-DD_HHMM
+    # \d{4} means "exactly 4 digits", \d{2} means "exactly 2 digits"
+    pattern = re.compile(r"^PLC_Backup_\d{4}-\d{2}-\d{2}_\d{4}$")
+
+    try:
+        # Get a list of everything inside the destination root folder
+        all_entries = os.listdir(dest_root)
+    except Exception:
+        # If the folder doesn't exist yet or can't be read, return None.
+        # This is expected on a first run before any backups have been made.
+        return None
+
+    # Build a list of folder names that match our backup naming pattern
+    matching = []
+    for entry in all_entries:
+        full_path = os.path.join(dest_root, entry)
+        # Only include it if it is a folder AND its name matches the pattern
+        if os.path.isdir(full_path) and pattern.match(entry):
+            matching.append(entry)
+
+    # If no matching folders were found, there is no previous backup
+    if not matching:
+        return None
+
+    # Sort alphabetically — because the format is YYYY-MM-DD_HHMM, this puts
+    # the most recent backup last in the list
+    matching.sort()
+
+    # Return the full path to the most recently named backup folder
+    latest_name = matching[-1]
+    return os.path.join(dest_root, latest_name)
+
+
+# =============================================================================
 # FUNCTION: copy_files_to_destination
 # =============================================================================
-# This is the workhorse — it copies every file from the source folder into
-# a new timestamped subfolder at the destination.
+# This is the workhorse — it copies files from the source folder into a new
+# timestamped subfolder at the destination, using incremental logic for .ACD
+# files: only NEW or CHANGED files are copied. Non-ACD files are always copied.
 #
-# Think of it like pulling every drawing from a filing cabinet drawer and
-# photocopying each one into a new labelled folder.
+# Think of it like pulling drawings from a filing cabinet — but this time,
+# you check if each drawing has been updated since the last copy was made.
+# If the drawing hasn't changed, you note it and skip the photocopier.
 #
 # Parameters:
 #   source      — the folder to copy FROM
@@ -105,17 +165,30 @@ def get_timestamp_folder_name():
 #   log_lines   — a list we append messages to (printed and saved to log later)
 #
 # Returns:
-#   files_copied  — how many files were successfully copied (integer)
-#   success       — True if everything worked, False if something went wrong
+#   files_copied        — how many files were actually copied (integer)
+#   success             — True if no errors occurred, False otherwise
+#   unchanged_acd_files — list of .ACD filenames that were skipped because
+#                         they have not been saved since the last backup
 # =============================================================================
 
 def copy_files_to_destination(source, dest_root, folder_name, log_lines):
     # Build the full path of the new backup folder
-    # e.g. Z:\PLC_Backups\PLC_Backup_2026-05-04_0830
+    # e.g. Z:\PLC_Backups\PLC_Backup_2026-05-17_0200
     dest_folder = os.path.join(dest_root, folder_name)
 
-    files_copied = 0   # Counter — starts at zero, goes up for each file copied
-    success = True     # Assume success unless something goes wrong
+    # Find the most recent existing backup folder BEFORE we create today's new one.
+    # We do this first so the folder we are about to create is not accidentally
+    # treated as the "previous" backup when comparing file timestamps.
+    prev_backup = find_latest_backup_folder(dest_root)
+
+    if prev_backup:
+        log_lines.append(f"  Comparing against previous backup: {os.path.basename(prev_backup)}")
+    else:
+        log_lines.append("  No previous backup found — this is a first run, copying everything.")
+
+    files_copied = 0          # Counter — starts at zero, goes up for each file copied
+    success = True            # Assume success unless something goes wrong
+    unchanged_acd_files = []  # Collects names of .ACD files that have not changed
 
     try:
         # Create the new timestamped folder
@@ -132,27 +205,85 @@ def copy_files_to_destination(source, dest_root, folder_name, log_lines):
             # Build the full path to this specific file
             source_file = os.path.join(source, item_name)
 
-            # Only copy files — skip any subfolders that might be in there
-            if os.path.isfile(source_file):
-                dest_file = os.path.join(dest_folder, item_name)
+            # Only process files — skip any subfolders inside the source
+            if not os.path.isfile(source_file):
+                continue
 
-                # shutil.copy2() copies the file AND preserves the original
-                # timestamps (created date, modified date) — important for records
-                shutil.copy2(source_file, dest_file)
+            # Where this file will go in today's backup folder
+            dest_file = os.path.join(dest_folder, item_name)
 
-                files_copied += 1  # Add 1 to our counter each time a file copies
-                log_lines.append(f"    Copied: {item_name}")
+            # Get the file extension (the part after the last dot, e.g. ".ACD")
+            # We use .upper() so ".acd" and ".ACD" are treated the same way
+            _, ext = os.path.splitext(item_name)
+            is_acd = (ext.upper() == ".ACD") and ("BAK" not in item_name.upper())
+
+            if not is_acd:
+                # Non-ACD files (like .BAK, recovery files, docs) are always copied
+                # regardless of whether they have changed — no incremental logic here
+                try:
+                    shutil.copy2(source_file, dest_file)
+                    files_copied += 1
+                    log_lines.append(f"    COPIED (non-ACD): {item_name}")
+                except Exception as copy_error:
+                    log_lines.append(f"    WARNING: Could not copy {item_name} — {copy_error}")
+
+            elif prev_backup is None:
+                # This is an ACD file, but there is no previous backup to compare against.
+                # This is a first run — copy everything.
+                try:
+                    shutil.copy2(source_file, dest_file)
+                    files_copied += 1
+                    log_lines.append(f"    NEW (first run): {item_name}")
+                except Exception as copy_error:
+                    log_lines.append(f"    WARNING: Could not copy {item_name} — {copy_error}")
+
+            else:
+                # This is an ACD file and we have a previous backup to compare against.
+                # Check if this file existed in the previous backup folder.
+                prev_file = os.path.join(prev_backup, item_name)
+
+                if not os.path.exists(prev_file):
+                    # File is brand new — it did not exist in the last backup at all
+                    try:
+                        shutil.copy2(source_file, dest_file)
+                        files_copied += 1
+                        log_lines.append(f"    NEW: {item_name}")
+                    except Exception as copy_error:
+                        log_lines.append(f"    WARNING: Could not copy {item_name} — {copy_error}")
+
+                elif os.path.getmtime(source_file) != os.path.getmtime(prev_file):
+                    # The file's "last modified" timestamp differs from the backup copy.
+                    # shutil.copy2() preserves timestamps, so a difference means the
+                    # operator saved this file in RSLogix 5000 since the last backup.
+                    try:
+                        shutil.copy2(source_file, dest_file)
+                        files_copied += 1
+                        log_lines.append(f"    CHANGED: {item_name}")
+                    except Exception as copy_error:
+                        log_lines.append(f"    WARNING: Could not copy {item_name} — {copy_error}")
+
+                else:
+                    # The modified timestamp matches — this file has NOT been saved
+                    # since the last backup. Skip copying it and flag it so the
+                    # operator warning popup can alert them to save and re-run.
+                    log_lines.append(f"    UNCHANGED (skipped): {item_name}")
+                    unchanged_acd_files.append(item_name)
 
         log_lines.append(f"  Total files copied: {files_copied}")
+        if unchanged_acd_files:
+            log_lines.append(
+                f"  Unchanged ACD files (not saved since last backup): "
+                f"{', '.join(unchanged_acd_files)}"
+            )
 
     except Exception as error:
         # If anything goes wrong (permission denied, disk full, path not found, etc.)
-        # catch the error, record it, and set success to False
-        # We do NOT use "raise" here — we want the script to keep running
+        # catch the error, record it, and set success to False.
+        # We do NOT use "raise" here — we want the script to keep running.
         log_lines.append(f"  ERROR: {error}")
         success = False
 
-    return files_copied, success
+    return files_copied, success, unchanged_acd_files
 
 
 # =============================================================================
@@ -191,13 +322,24 @@ def write_log(log_file, log_lines):
 
 
 # =============================================================================
-# FUNCTION: main
+# FUNCTION: run_backup
 # =============================================================================
-# This is the control panel — it runs everything in the right order.
-# Think of it like the main breaker panel: it coordinates which circuits run.
+# This function contains all the actual backup work. It runs one complete
+# backup cycle and returns a set of any .ACD filenames that were UNCHANGED
+# (not saved by the operator since the last backup).
+#
+# Separating the backup work into its own function means the operator warning
+# popup (backup_popup.py) can call this function again if the operator clicks
+# "Run Backup Again" — without needing to restart the whole script.
+#
+# Think of it like a sub-panel that main() can switch on whenever needed.
+#
+# Returns:
+#   A set of .ACD filenames (just the filename, no folder path) that were
+#   unchanged. An empty set means all files were saved — nothing to warn about.
 # =============================================================================
 
-def main():
+def run_backup():
     # This list collects all status messages during the run.
     # At the end, we write them all to the log file at once.
     log_lines = []
@@ -218,7 +360,7 @@ def main():
         print(message)
         log_lines.append(message)
         write_log(LOG_FILE, log_lines)
-        return  # Stop here — nothing to backup
+        return set()  # Return empty set — nothing backed up, nothing to warn about
 
     # --- Step 3: Copy to NAS ---
     # The entire NAS copy is wrapped in try/except so if the NAS is
@@ -228,7 +370,7 @@ def main():
     log_lines.append(f"  Destination: {NAS_BACKUP}")
 
     try:
-        nas_count, nas_ok = copy_files_to_destination(
+        nas_count, nas_ok, nas_unchanged = copy_files_to_destination(
             SOURCE_DIR, NAS_BACKUP, folder_name, log_lines
         )
         if nas_ok:
@@ -240,6 +382,7 @@ def main():
         print(f"  NAS backup FAILED: {nas_error}")
         log_lines.append(f"  NAS backup FAILED: {nas_error}")
         nas_ok = False
+        nas_unchanged = []  # No unchanged list if the whole backup failed
 
     # --- Step 4: Copy to local backup ---
     # This runs regardless of what happened with the NAS above
@@ -248,7 +391,7 @@ def main():
     log_lines.append(f"  Destination: {LOCAL_BACKUP}")
 
     try:
-        local_count, local_ok = copy_files_to_destination(
+        local_count, local_ok, local_unchanged = copy_files_to_destination(
             SOURCE_DIR, LOCAL_BACKUP, folder_name, log_lines
         )
         if local_ok:
@@ -259,6 +402,7 @@ def main():
         print(f"  Local backup FAILED: {local_error}")
         log_lines.append(f"  Local backup FAILED: {local_error}")
         local_ok = False
+        local_unchanged = []  # No unchanged list if the whole backup failed
 
     # --- Step 5: Print final summary ---
     print("\n" + "=" * 50)
@@ -273,9 +417,48 @@ def main():
     log_lines.append(f"  NAS backup:   {'OK' if nas_ok else 'FAILED'}")
     log_lines.append(f"  Local backup: {'OK' if local_ok else 'FAILED'}")
 
+    # Combine the unchanged ACD lists from both destinations into one set.
+    # Using a set removes duplicates (the same filename won't appear twice).
+    # Using union (|) means: if a file is UNCHANGED on either destination,
+    # we warn the operator — even if only one destination had a previous backup.
+    unchanged_acd_set = set(nas_unchanged) | set(local_unchanged)
+
+    if unchanged_acd_set:
+        log_lines.append(
+            f"  Unchanged ACD files (popup will be shown): "
+            f"{', '.join(sorted(unchanged_acd_set))}"
+        )
+
     # --- Step 6: Write everything to the log file ---
     write_log(LOG_FILE, log_lines)
     print("\nLog file updated.")
+
+    # Return the set of unchanged ACD filenames so main() can decide
+    # whether to show the operator warning popup
+    return unchanged_acd_set
+
+
+# =============================================================================
+# FUNCTION: main
+# =============================================================================
+# This is the entry point — it runs the backup and then checks whether the
+# operator warning popup needs to be shown.
+#
+# Think of it like the main breaker panel: it coordinates which circuits run.
+# =============================================================================
+
+def main():
+    # Run the full backup and find out if any ACD files were unchanged
+    unchanged = run_backup()
+
+    # If any ACD files were skipped because they had not been saved since
+    # the last backup, show the operator a warning popup
+    if unchanged:
+        # We import backup_popup here (not at the top of the file) so that
+        # tkinter is only loaded when a popup is actually needed. On a headless
+        # Task Scheduler run with no desktop, importing tkinter can cause errors.
+        from backup_popup import show_warning
+        show_warning(unchanged, run_backup)
 
 
 # =============================================================================
