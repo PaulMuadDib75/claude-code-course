@@ -142,9 +142,65 @@ def find_latest_backup_folder(dest_root):
     # the most recent backup last in the list
     matching.sort()
 
-    # Return the full path to the most recently named backup folder
-    latest_name = matching[-1]
-    return os.path.join(dest_root, latest_name)
+    # Walk backwards through the sorted list (most recent first) and return
+    # the first folder that actually contains at least one .ACD file.
+    # This skips folders that were created but received no ACD files (e.g. if
+    # the source was empty or the copy failed), so timestamp comparisons in
+    # copy_files_to_destination compare against a real previous ACD file.
+    for folder_name in reversed(matching):
+        folder_path = os.path.join(dest_root, folder_name)
+        try:
+            contents = os.listdir(folder_path)
+        except Exception:
+            continue
+        # Check whether any file in this folder has a .ACD extension
+        if any(f.upper().endswith('.ACD') and 'BAK' not in f.upper() for f in contents):
+            return folder_path
+
+    # No backup folder contained any .ACD file — treat as first run
+    return None
+
+
+# =============================================================================
+# FUNCTION: _keep_latest_per_processor
+# =============================================================================
+# Given a list (or any iterable) of ACD filenames, return a new list that
+# contains only the most recently dated file for each processor.
+#
+# Processor name = everything before the first _YYYY_ date pattern.
+#   "Rewash_2026_01_03.ACD"  →  processor "Rewash", date "2026_01_03"
+#   "Rewash_2026_05_17.ACD"  →  processor "Rewash", date "2026_05_17"
+#   → only "Rewash_2026_05_17.ACD" is kept.
+#
+# String comparison works for dates because YYYY_MM_DD is zero-padded and
+# consistent, so lexicographic order equals chronological order.
+#
+# Files that don't match the expected pattern are kept unconditionally.
+# =============================================================================
+
+def _keep_latest_per_processor(file_list):
+    import re
+
+    # best maps each processor name to (date_string, filename)
+    best = {}
+
+    for filename in file_list:
+        # Match: <processor>_YYYY_MM_DD.ACD  (case-insensitive extension)
+        match = re.match(r'^(.+?)_(\d{4}_\d{2}_\d{2})\.ACD$', filename, re.IGNORECASE)
+        if match:
+            processor = match.group(1)   # e.g. "Rewash"
+            date_str  = match.group(2)   # e.g. "2026_05_17"
+            # Keep this file if we haven't seen this processor yet,
+            # or if its date is later than the one we already have
+            if processor not in best or date_str > best[processor][0]:
+                best[processor] = (date_str, filename)
+        else:
+            # Doesn't follow the dated-name convention — keep it as-is.
+            # Use the full filename as the key so nothing is accidentally dropped.
+            best[filename] = ('', filename)
+
+    # Return just the filenames (discard the date strings used for comparison)
+    return [entry[1] for entry in best.values()]
 
 
 # =============================================================================
@@ -282,6 +338,9 @@ def copy_files_to_destination(source, dest_root, folder_name, log_lines):
         # We do NOT use "raise" here — we want the script to keep running.
         log_lines.append(f"  ERROR: {error}")
         success = False
+
+    # Keep only the most recently dated .ACD file per processor name
+    unchanged_acd_files = _keep_latest_per_processor(unchanged_acd_files)
 
     return files_copied, success, unchanged_acd_files
 
@@ -422,6 +481,8 @@ def run_backup():
     # Using union (|) means: if a file is UNCHANGED on either destination,
     # we warn the operator — even if only one destination had a previous backup.
     unchanged_acd_set = set(nas_unchanged) | set(local_unchanged)
+    # Keep only the most recently dated .ACD file per processor name
+    unchanged_acd_set = set(_keep_latest_per_processor(unchanged_acd_set))
 
     if unchanged_acd_set:
         log_lines.append(
