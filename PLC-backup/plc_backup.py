@@ -393,9 +393,11 @@ def write_log(log_file, log_lines):
 #
 # Think of it like a sub-panel that main() can switch on whenever needed.
 #
-# Returns:
-#   A set of .ACD filenames (just the filename, no folder path) that were
-#   unchanged. An empty set means all files were saved — nothing to warn about.
+# Returns a tuple of four values:
+#   unchanged_acd_set — set of .ACD filenames that were not saved since last backup
+#   nas_ok            — True if the NAS backup completed without errors
+#   local_ok          — True if the local backup completed without errors
+#   files_copied      — total number of files copied across both destinations
 # =============================================================================
 
 def run_backup():
@@ -419,7 +421,9 @@ def run_backup():
         print(message)
         log_lines.append(message)
         write_log(LOG_FILE, log_lines)
-        return set()  # Return empty set — nothing backed up, nothing to warn about
+        # Return a full tuple so main() can always unpack four values.
+        # Both destinations failed, so nas_ok and local_ok are False.
+        return (set(), False, False, 0)
 
     # --- Step 3: Copy to NAS ---
     # The entire NAS copy is wrapped in try/except so if the NAS is
@@ -441,6 +445,7 @@ def run_backup():
         print(f"  NAS backup FAILED: {nas_error}")
         log_lines.append(f"  NAS backup FAILED: {nas_error}")
         nas_ok = False
+        nas_count = 0       # No files were copied if the whole backup failed
         nas_unchanged = []  # No unchanged list if the whole backup failed
 
     # --- Step 4: Copy to local backup ---
@@ -461,6 +466,7 @@ def run_backup():
         print(f"  Local backup FAILED: {local_error}")
         log_lines.append(f"  Local backup FAILED: {local_error}")
         local_ok = False
+        local_count = 0       # No files were copied if the whole backup failed
         local_unchanged = []  # No unchanged list if the whole backup failed
 
     # --- Step 5: Print final summary ---
@@ -494,9 +500,9 @@ def run_backup():
     write_log(LOG_FILE, log_lines)
     print("\nLog file updated.")
 
-    # Return the set of unchanged ACD filenames so main() can decide
-    # whether to show the operator warning popup
-    return unchanged_acd_set
+    # Return a tuple so main() has everything it needs to pick the right popup.
+    # nas_count + local_count = total copy operations across both destinations.
+    return (unchanged_acd_set, nas_ok, local_ok, nas_count)
 
 
 # =============================================================================
@@ -509,17 +515,23 @@ def run_backup():
 # =============================================================================
 
 def main():
-    # Run the full backup and find out if any ACD files were unchanged
-    unchanged = run_backup()
+    # Run the full backup and unpack the four values it now returns
+    unchanged, nas_ok, local_ok, files_copied = run_backup()
 
-    # If any ACD files were skipped because they had not been saved since
-    # the last backup, show the operator a warning popup
+    # We import backup_popup here (not at the top of the file) so that
+    # tkinter is only loaded when a popup is actually needed. On a headless
+    # Task Scheduler run with no desktop, importing tkinter can cause errors.
     if unchanged:
-        # We import backup_popup here (not at the top of the file) so that
-        # tkinter is only loaded when a popup is actually needed. On a headless
-        # Task Scheduler run with no desktop, importing tkinter can cause errors.
+        # Some ACD files were not saved since the last backup — warn the operator.
+        # We pass a lambda instead of run_backup directly so that show_warning
+        # still receives a plain set from the callback (not the full tuple).
+        # The [0] extracts just the unchanged_acd_set from the tuple.
         from backup_popup import show_warning
-        show_warning(unchanged, run_backup)
+        show_warning(unchanged, lambda: run_backup()[0])
+    else:
+        # All files were up to date — show the clean success summary popup
+        from backup_popup import show_success
+        show_success(nas_ok, local_ok, files_copied)
 
 
 # =============================================================================
