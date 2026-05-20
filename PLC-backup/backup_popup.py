@@ -145,9 +145,12 @@ def show_warning(unchanged_files, run_backup_callback):
     instruction_label = tk.Label(
         root,
         text=(
-            "The above programs have not been saved since the last backup.\n"
-            "Please save these programs in RSLogix 5000 then click Run Backup Again."
-        ),
+    	    "The above programs have not been saved since the last backup.\n\n"
+    	    "In RSLogix 5000: File → Save As\n"
+    	    "Use naming convention: ProgramName_YYYY_MM_DD.ACD\n"
+    	    "Example: Rewash_2026_05_20.ACD\n\n"
+    	    "Save each program then click Run Backup Again."
+	),
         justify=tk.CENTER,
         wraplength=460,     # Wrap text so it fits within the 500px window (with margins)
         font=("Arial", 10)
