@@ -64,7 +64,7 @@ NAS_BACKUP = r"Z:\PLC_Programs"
 
 # Local backup destination (secondary copy on this machine or a local drive)
 # TODO: FILL IN BEFORE USING — e.g. r"D:\Backups\PLC"
-LOCAL_BACKUP = r"C:\Backups\PLC"
+LOCAL_BACKUP = r"C:\NAS_Backups\PLC"
 
 # Where the log file will be written (inside the local backup folder is a
 # good place so it's easy to find alongside the backups)
